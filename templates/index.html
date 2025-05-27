@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sistem ESP32 Monitorizare</title>
+</head>
+<body>
+    <h1>Sistem Monitorizare ESP32</h1>
+    <p>Temperatura curentă: <span id="temp">--</span> °C</p>
+    <p>Inundație: <span id="flood">--</span></p>
+    <button onclick="toggleLED()">Toggle LED</button>
+    <script>
+        async function fetchData() {
+            const res = await fetch('/latest');
+            const data = await res.json();
+            document.getElementById("temp").innerText = data.temperature;
+            document.getElementById("flood").innerText = data.humidity === "1" ? "DA" : "NU";
+        }
+
+        function toggleLED() {
+            fetch('/submit', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: 'temperature=30&flood=0'
+            });
+        }
+
+        setInterval(fetchData, 5000);
+        fetchData();
+    </script>
+</body>
+</html>
