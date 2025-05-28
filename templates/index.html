@@ -1,31 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Sistem ESP32 Monitorizare</title>
+    <meta charset="UTF-8">
+    <title>ESP32 Control Panel</title>
 </head>
 <body>
-    <h1>Sistem Monitorizare ESP32</h1>
-    <p>Temperatura curentă: <span id="temp">--</span> °C</p>
-    <p>Inundație: <span id="flood">--</span></p>
-    <button onclick="toggleLED()">Toggle LED</button>
-    <script>
-        async function fetchData() {
-            const res = await fetch('/latest');
-            const data = await res.json();
-            document.getElementById("temp").innerText = data.temperature;
-            document.getElementById("flood").innerText = data.humidity === "1" ? "DA" : "NU";
-        }
-
-        function toggleLED() {
-            fetch('/submit', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-                body: 'temperature=30&flood=0'
-            });
-        }
-
-        setInterval(fetchData, 5000);
-        fetchData();
-    </script>
+    <h1>ESP32 Web Control</h1>
+    <p>Temperature: {{ temp }} °C</p>
+    <p>LED Status: {{ led_status }}</p>
+    <p>Flood Event: {{ flood_event }}</p>
+    <form method="POST">
+        <button type="submit" name="on">Turn ON LED</button>
+        <button type="submit" name="off">Turn OFF LED</button><br><br>
+        <input type="text" name="message" placeholder="Send message">
+        <button type="submit">Send Message</button>
+    </form>
+    <h3>Messages</h3>
+    <ul>
+        {% for msg in messages %}
+        <li>{{ msg }}</li>
+        {% endfor %}
+    </ul>
 </body>
 </html>
