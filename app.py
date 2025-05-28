@@ -1,13 +1,13 @@
-# app.py
+# app.py (cu variabile de mediu)
 from flask import Flask, render_template, request, jsonify
 import pyodbc
 import smtplib
 from email.mime.text import MIMEText
 import os
 
-app = Flask(_name_)  # ✅ Corectat
+app = Flask(_name_)
 
-# 🔧 Conectare la Azure SQL
+# Configurare Azure SQL DB din variabile de mediu
 def get_db_connection():
     try:
         server = os.getenv("DB_SERVER")
@@ -15,10 +15,10 @@ def get_db_connection():
         username = os.getenv("DB_USER")
         password = os.getenv("DB_PASSWORD")
         driver = '{ODBC Driver 17 for SQL Server}'
-        conn_str = f'DRIVER={driver};SERVER={server};PORT=1433;DATABASE={database};UID={username};PWD={password}'
-        return pyodbc.connect(conn_str)
+        connection = pyodbc.connect(f'DRIVER={driver};SERVER={server};PORT=1433;DATABASE={database};UID={username};PWD={password}')
+        return connection
     except Exception as e:
-        print(f"❌ DB Connection error: {e}")
+        print(f"❌ Eroare la conexiune: {e}")
         return None
 
 @app.route('/')
@@ -30,26 +30,18 @@ def submit():
     temp = request.form.get('temperature')
     flood = request.form.get('flood')
 
-    print(f"📥 Primit: temperature={temp}, flood={flood}")  # ✅ Debug
-
     connection = get_db_connection()
     if not connection:
-        return jsonify({"error": "DB connection failed"}), 500
+        return jsonify({"error": "DB error"}), 500
 
     try:
         cursor = connection.cursor()
-        cursor.execute("""
-            INSERT INTO telemetry (temperature, humidity, EventEnqueuedUtcTime)
-            VALUES (?, ?, GETDATE())
-        """, (temp, flood))
+        cursor.execute("INSERT INTO telemetry (temperature, humidity, EventEnqueuedUtcTime) VALUES (?, ?, GETDATE())", (temp, flood))
         connection.commit()
         cursor.close()
-
-        # 🔁 Trimite stare LED înapoi
         return jsonify({"led": 1 if float(temp) > 25 else 0})
-
     except Exception as e:
-        print(f"❌ Insert error: {e}")
+        print(e)
         return jsonify({"error": "Insert error"}), 500
     finally:
         connection.close()
@@ -57,10 +49,9 @@ def submit():
 @app.route('/alert', methods=['POST'])
 def alert():
     try:
-        send_email("🌊 ALERTĂ INUNDAȚIE", "S-a detectat o inundație în sistem!")
+        send_email("ALERTĂ INUNDAȚIE", "S-a detectat o inundație în sistem!")
         return jsonify({"status": "Email trimis"})
     except Exception as e:
-        print(f"❌ Email error: {e}")
         return jsonify({"error": str(e)}), 500
 
 def send_email(subject, content):
@@ -78,5 +69,5 @@ def send_email(subject, content):
         server.login(sender, password)
         server.sendmail(sender, receiver, msg.as_string())
 
-if _name_ == '_main_':  # ✅ Corectat
-    app.run(debug=True, host='0.0.0.0')
+if _name_ == '_main_':
+    app.run(debug=True, host='0.0.0.0')
