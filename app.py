@@ -5,7 +5,7 @@ import smtplib
 from email.mime.text import MIMEText
 import os
 
-app = Flask(_name_)  
+app = Flask(_name_)  # ✅ Corectat
 
 # 🔧 Conectare la Azure SQL
 def get_db_connection():
@@ -30,7 +30,7 @@ def submit():
     temp = request.form.get('temperature')
     flood = request.form.get('flood')
 
-    print(f"📥 Primit: temperature={temp}, flood={flood}")  
+    print(f"📥 Primit: temperature={temp}, flood={flood}")  # ✅ Debug
 
     connection = get_db_connection()
     if not connection:
@@ -59,4 +59,24 @@ def alert():
     try:
         send_email("🌊 ALERTĂ INUNDAȚIE", "S-a detectat o inundație în sistem!")
         return jsonify({"status": "Email trimis"})
-    exce
+    except Exception as e:
+        print(f"❌ Email error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+def send_email(subject, content):
+    sender = os.getenv("EMAIL_SENDER")
+    password = os.getenv("EMAIL_PASSWORD")
+    receiver = os.getenv("EMAIL_RECEIVER")
+
+    msg = MIMEText(content)
+    msg["Subject"] = subject
+    msg["From"] = sender
+    msg["To"] = receiver
+
+    with smtplib.SMTP("smtp.office365.com", 587) as server:
+        server.starttls()
+        server.login(sender, password)
+        server.sendmail(sender, receiver, msg.as_string())
+
+if _name_ == '_main_':  # ✅ Corectat
+    app.run(debug=True, host='0.0.0.0')
